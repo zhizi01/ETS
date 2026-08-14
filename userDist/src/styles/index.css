@@ -1,0 +1,270 @@
+:root {
+  /* 层次：最深底 → 面板 → 抬升块 */
+  --ets-bg: #0d1117;
+  --ets-panel: #161b22;
+  --ets-raise: #1c2330;
+  --ets-hover: #222b38;
+  --ets-line: #262d38;
+  --ets-line-soft: #1e242e;
+
+  --ets-text: #d7dde7;
+  --ets-text-strong: #f0f4fa;
+  --ets-text-weak: #8b98a9;
+  --ets-text-faint: #5f6b7c;
+
+  /* 国内习惯：红涨绿跌 */
+  --ets-up: #f5222d;
+  --ets-up-soft: rgba(245, 34, 45, 0.16);
+  --ets-down: #00b578;
+  --ets-down-soft: rgba(0, 181, 120, 0.16);
+  --ets-flat: #8b98a9;
+
+  --ets-accent: #2f7fff;
+  --ets-accent-soft: rgba(47, 127, 255, 0.16);
+  --ets-warn: #f5a524;
+  --ets-gold: #e2b33c;
+
+  --ets-mono: 'JetBrains Mono', 'Cascadia Mono', 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  --ets-radius: 6px;
+  --ets-topbar-h: 52px;
+  --ets-nav-w: 176px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--ets-bg);
+  color: var(--ets-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  overflow: hidden;
+}
+
+/* ── 通用原子 ───────────────────────────────── */
+
+.mono {
+  font-family: var(--ets-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+}
+
+.up {
+  color: var(--ets-up);
+}
+.down {
+  color: var(--ets-down);
+}
+.flat {
+  color: var(--ets-flat);
+}
+
+.ets-panel {
+  background: var(--ets-panel);
+  border: 1px solid var(--ets-line);
+  border-radius: var(--ets-radius);
+}
+
+.ets-panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--ets-line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ets-text-strong);
+  letter-spacing: 0.4px;
+  flex: none;
+}
+
+.ets-panel-title .sub {
+  font-weight: 400;
+  color: var(--ets-text-weak);
+  letter-spacing: 0;
+}
+
+.ets-scroll {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #333c4a transparent;
+}
+.ets-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.ets-scroll::-webkit-scrollbar-thumb {
+  background: #333c4a;
+  border-radius: 4px;
+}
+.ets-scroll::-webkit-scrollbar-thumb:hover {
+  background: #43506245;
+}
+.ets-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ets-label {
+  color: var(--ets-text-weak);
+  font-size: 12px;
+}
+
+.ets-kv {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 12px;
+}
+.ets-kv > span:first-child {
+  color: var(--ets-text-weak);
+  white-space: nowrap;
+}
+
+/* 数字跳动高亮 */
+@keyframes etsFlashUp {
+  0% {
+    background-color: var(--ets-up-soft);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+@keyframes etsFlashDown {
+  0% {
+    background-color: var(--ets-down-soft);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.flash-up {
+  animation: etsFlashUp 0.75s ease-out;
+  border-radius: 3px;
+}
+.flash-down {
+  animation: etsFlashDown 0.75s ease-out;
+  border-radius: 3px;
+}
+
+/* ── AntDV 深色覆写 ─────────────────────────── */
+
+.ant-app,
+.ant-app > div {
+  height: 100%;
+}
+
+.ant-table {
+  font-size: 12px !important;
+}
+.ant-table-thead > tr > th {
+  background: var(--ets-raise) !important;
+  color: var(--ets-text-weak) !important;
+  font-weight: 500 !important;
+  border-bottom: 1px solid var(--ets-line) !important;
+  padding: 7px 10px !important;
+  white-space: nowrap;
+}
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--ets-line-soft) !important;
+  padding: 6px 10px !important;
+}
+.ant-table-tbody > tr.ant-table-row:hover > td,
+.ant-table-tbody > tr > td.ant-table-cell-row-hover {
+  background: var(--ets-hover) !important;
+}
+.ant-table-placeholder > td {
+  border-bottom: none !important;
+}
+.ant-table-cell-scrollbar {
+  box-shadow: none !important;
+}
+
+.ant-modal-content,
+.ant-drawer-content {
+  background: var(--ets-panel) !important;
+}
+.ant-modal-header {
+  background: transparent !important;
+  border-bottom: 1px solid var(--ets-line) !important;
+  margin-bottom: 16px !important;
+  padding-bottom: 12px !important;
+}
+
+.ant-tabs-tab {
+  padding: 6px 4px !important;
+  font-size: 12px !important;
+}
+.ant-tabs-top > .ant-tabs-nav {
+  margin: 0 0 8px 0 !important;
+}
+
+.ant-form-item {
+  margin-bottom: 12px !important;
+}
+.ant-form-item-label > label {
+  font-size: 12px !important;
+  color: var(--ets-text-weak) !important;
+  height: 26px !important;
+}
+.ant-input-number,
+.ant-input-number-group-wrapper {
+  width: 100% !important;
+}
+.ant-input-number-input,
+.ant-input,
+.ant-select-selection-item {
+  font-variant-numeric: tabular-nums;
+}
+
+.ant-descriptions-item-label {
+  color: var(--ets-text-weak) !important;
+}
+
+.ant-empty-description {
+  color: var(--ets-text-faint) !important;
+  font-size: 12px;
+}
+
+.ant-tag {
+  margin-inline-end: 4px !important;
+  font-size: 11px !important;
+  line-height: 17px !important;
+  padding: 0 5px !important;
+}
+
+.ant-btn-sm {
+  font-size: 12px !important;
+}
+
+.ant-message-notice-content {
+  background: var(--ets-raise) !important;
+  border: 1px solid var(--ets-line) !important;
+  color: var(--ets-text) !important;
+}
+
+.ant-statistic-title {
+  font-size: 12px !important;
+  color: var(--ets-text-weak) !important;
+}
+.ant-statistic-content {
+  font-family: var(--ets-mono) !important;
+}

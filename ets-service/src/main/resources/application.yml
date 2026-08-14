@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: ets
+  data:
+    redis:
+      host: 10.0.0.12
+      port: 6379
+      password: 1234567890aa
+      database: 3
+      timeout: 5s
+      connect-timeout: 5s
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 32
+          max-idle: 16
+          min-idle: 4
+          max-wait: 3s
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+server:
+  port: 8080
+  compression:
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.github.zhizi01.ets: DEBUG
+
+ets:
+  # 令牌有效期
+  token-ttl: 7d
+  # 允许跨域的前端来源（userDist 5173 / adminDist 5174）
+  cors-origins:
+    - http://localhost:5173
+    - http://localhost:5174
+    - http://127.0.0.1:5173
+    - http://127.0.0.1:5174
+  bootstrap:
+    # 首次启动自动创建的内置管理员
+    admin-username: admin
+    admin-password: admin123
+    # 启动时若无任何模拟盘，自动生成一个演示盘（含标准场次与机器人）
+    demo-data: true
+  engine:
+    # 撮合线程数（每个场次串行，场次间并行）
+    match-threads: 4
+    # 订单簿镜像写 Redis 的批量间隔
+    mirror-interval-ms: 200
+  market:
+    # 行情快照与 K 线推送节流
+    quote-push-interval-ms: 1000
+    kline-intervals: 1m,5m,15m,1h,1d
+  robot:
+    enabled: true
+    # 机器人调度线程池
+    threads: 8
+    # 全局最小 tick，防止误配置刷爆
+    min-tick-interval-ms: 500
+  mysql:
+    enabled: true
+    url: jdbc:mysql://127.0.0.1:3306/ets?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+    username: ets
+    password: Tpfpxakt33dcwZ6e
+    # 归档批量与刷盘间隔
+    batch-size: 200
+    flush-interval-ms: 5000
