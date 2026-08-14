@@ -30,12 +30,17 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     private final EtsWebSocketHandler handler;
     private final TokenService tokenService;
+    private final EtsProperties props;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        String[] origins = props.getCorsOrigins().isEmpty()
+                ? new String[]{"http://localhost:5173", "http://localhost:5174",
+                "http://127.0.0.1:5173", "http://127.0.0.1:5174"}
+                : props.getCorsOrigins().toArray(new String[0]);
         registry.addHandler(handler, "/ws")
                 .addInterceptors(new TokenHandshakeInterceptor(tokenService))
-                .setAllowedOriginPatterns("*");
+                .setAllowedOrigins(origins);
     }
 
     /**

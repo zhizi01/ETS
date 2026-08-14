@@ -1,7 +1,7 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell, ChevronDown, LayoutGrid, LogOut, Radio, Zap } from 'lucide-vue-next'
+import { Bell, ChevronDown, KeyRound, LayoutGrid, LogOut, Radio, Zap } from 'lucide-vue-next'
 import { Modal, message } from 'ant-design-vue'
 import NumFlash from '@/components/common/NumFlash.vue'
 import StateTag from '@/components/common/StateTag.vue'
@@ -55,6 +55,43 @@ function openBell(open) {
 function gotoNotices() {
   bellOpen.value = false
   if (simStore.currentSimId) router.push(`/sim/${simStore.currentSimId}/notices`)
+}
+
+const pwdOpen = ref(false)
+const pwdSaving = ref(false)
+const pwdForm = reactive({ oldPassword: '', newPassword: '', confirm: '' })
+
+function openPassword() {
+  pwdForm.oldPassword = ''
+  pwdForm.newPassword = ''
+  pwdForm.confirm = ''
+  pwdOpen.value = true
+}
+
+async function submitPassword() {
+  if (!pwdForm.oldPassword || !pwdForm.newPassword) {
+    message.warning('请填写原密码与新密码')
+    return
+  }
+  if (pwdForm.newPassword.length < 6) {
+    message.warning('新密码至少 6 位')
+    return
+  }
+  if (pwdForm.newPassword !== pwdForm.confirm) {
+    message.warning('两次输入的新密码不一致')
+    return
+  }
+  pwdSaving.value = true
+  try {
+    await auth.changePassword({ oldPassword: pwdForm.oldPassword, newPassword: pwdForm.newPassword })
+    pwdOpen.value = false
+    message.success('密码已更新，请重新登录')
+    router.replace({ name: 'login' })
+  } catch {
+    // 原密码错误由后端提示
+  } finally {
+    pwdSaving.value = false
+  }
 }
 
 function confirmLogout() {
@@ -190,6 +227,9 @@ function confirmLogout() {
             </a-menu-item>
             <a-menu-divider />
             <a-menu-item key="lobby" @click="router.push('/lobby')">切换模拟盘</a-menu-item>
+            <a-menu-item key="pwd" @click="openPassword">
+              <KeyRound :size="12" style="margin-right: 6px; vertical-align: -1px" />修改密码
+            </a-menu-item>
             <a-menu-item key="out" danger @click="confirmLogout">
               <LogOut :size="12" style="margin-right: 6px; vertical-align: -1px" />退出登录
             </a-menu-item>
@@ -197,6 +237,20 @@ function confirmLogout() {
         </template>
       </a-dropdown>
     </div>
+    <a-modal v-model:open="pwdOpen" title="修改登录密码" :confirm-loading="pwdSaving" ok-text="确认修改" cancel-text="取消" @ok="submitPassword">
+      <a-form layout="vertical">
+        <a-form-item label="原密码" required>
+          <a-input-password v-model:value="pwdForm.oldPassword" autocomplete="current-password" />
+        </a-form-item>
+        <a-form-item label="新密码" required>
+          <a-input-password v-model:value="pwdForm.newPassword" autocomplete="new-password" placeholder="至少 6 位" />
+        </a-form-item>
+        <a-form-item label="确认新密码" required>
+          <a-input-password v-model:value="pwdForm.confirm" autocomplete="new-password" />
+        </a-form-item>
+      </a-form>
+      <p class="ets-label">改密后当前会话立即失效，需要用新密码重新登录。</p>
+    </a-modal>
   </header>
 </template>
 

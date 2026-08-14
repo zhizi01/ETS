@@ -100,6 +100,19 @@ async function toggle(r) {
   }
 }
 
+function spawnDefault() {
+  askConfirm({
+    title: '投放默认机器人阵容？',
+    okText: '投放',
+    content: '按标准策略配比补齐该演练场的默认机器人（已有机器人时不会重复生成），并立即启动。',
+    onOk: async () => {
+      const r = await robotApi.spawnDefault(simId.value)
+      message.success(`已投放 ${r?.total ?? 0} 台，当前运行 ${r?.running ?? 0} 台`)
+      await load()
+    },
+  })
+}
+
 function enableAll() {
   askConfirm({
     title: '全部启用该演练场的机器人？',
@@ -335,6 +348,9 @@ watch(simId, load)
         </a-button>
         <a-button size="small" danger :disabled="!simId || !rows.length" @click="disableAll">
           <Power :size="13" style="vertical-align: -2px" /> 全部停用
+        </a-button>
+        <a-button size="small" :disabled="!simId" @click="spawnDefault">
+          <Bot :size="13" style="vertical-align: -2px" /> 默认阵容
         </a-button>
         <a-button size="small" :disabled="!simId" @click="openBatch">
           <Sparkles :size="13" style="vertical-align: -2px" /> 批量生成

@@ -1,5 +1,6 @@
 package com.github.zhizi01.ets.service.clearing;
 
+import com.github.zhizi01.ets.api.ArchivePort;
 import com.github.zhizi01.ets.api.ClearingPort;
 import com.github.zhizi01.ets.api.FundPort;
 import com.github.zhizi01.ets.api.MarketPort;
@@ -47,6 +48,9 @@ public class ContractService {
     @Lazy
     @Autowired
     private ClearingPort clearingPort;
+    @Lazy
+    @Autowired
+    private ArchivePort archivePort;
 
     /**
      * 构造一笔成交。金额、双方手续费、成交序号在这里一次算齐，
@@ -89,8 +93,10 @@ public class ContractService {
      */
     public Contract commitTrade(Trade trade, String deliveryStart, String deliveryEnd) {
         tradeRepo.saveTrade(trade);
+        archivePort.offerTrade(trade);
         fundPort.applyTrade(trade);
         Contract contract = clearingPort.createContract(trade, deliveryStart, deliveryEnd);
+        archivePort.offerContract(contract);
         // onTrade 之外不要再推 trade 主题：它推的是脱敏后的行情视图，
         // 这里重复推原始 Trade 会让前端收到重复帧，并把双方账户 id 暴露给公开订阅者。
         // 注意 onTrade 内部会自行读改写场次的价量统计，调用方不得用旧快照回写场次。

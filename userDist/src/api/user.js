@@ -65,6 +65,17 @@ export const spotApi = {
   myResult: (accountId, sessionId) => http.get('/user/spot/my-result', { params: { accountId, sessionId } }),
 }
 
+// ── 场次 / 公告 ──────────────────────────────────
+export const sessionApi = {
+  list: (params) => http.get('/user/sessions', { params }),
+  detail: (id) => http.get(`/user/sessions/${id}`),
+}
+
+export const noticeApi = {
+  list: (simId, limit = 20) => http.get('/user/notices', { params: { simId, limit } }),
+  feed: (simId, limit = 50) => http.get('/user/notices/feed', { params: { simId, limit } }),
+}
+
 // ── 合同 / 结算 / 绩效 ───────────────────────────
 export const assetApi = {
   contracts: (params) => http.get('/user/contracts', { params }),

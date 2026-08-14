@@ -1,4 +1,6 @@
 import { defineStore } from 'pinia'
+import { pubApi } from '@/api/pub'
+import { noticeApi } from '@/api/user'
 import { MARKET_EVENT_TYPE } from '@/utils/enums'
 
 const MAX_FEED = 200
@@ -6,16 +8,14 @@ let seq = 0
 
 /**
  * 公告与市场事件。
- *
- * 注意：后端并未实现 docs/API.md 里写的 GET /api/user/notices
- * （NoticeService 只挂在 /api/admin/notices 上，USER 角色会被 403 拦下），
- * 所以用户端的公告完全来自 WebSocket 主题 sim.{simId} 的实时推送。
+ * 首屏走 REST 历史，盘中靠 WebSocket 主题 sim.{simId} 增量推送。
  */
 export const useNoticeStore = defineStore('notice', {
   state: () => ({
     feed: [],
     unread: 0,
     fundamental: null,
+    loadedSimId: '',
   }),
 
   getters: {
@@ -34,9 +34,37 @@ export const useNoticeStore = defineStore('notice', {
         this.fundamental = item.raw
         return
       }
+      if (this.feed.some((x) => x.id === item.id)) return
       this.feed.unshift(item)
       if (this.feed.length > MAX_FEED) this.feed.length = MAX_FEED
       this.unread += 1
+    },
+
+    async loadHistory(simId) {
+      if (!simId) return
+      this.loadedSimId = simId
+      let notices = []
+      let events = []
+      try {
+        const feed = await noticeApi.feed(simId, 50)
+        notices = feed?.notices || []
+        events = feed?.events || []
+      } catch {
+        const [n, e] = await Promise.allSettled([pubApi.notices(simId, 50), pubApi.events(simId, 50)])
+        notices = n.status === 'fulfilled' ? n.value || [] : []
+        events = e.status === 'fulfilled' ? e.value || [] : []
+      }
+      const hist = []
+      for (const n of notices) hist.push(normalize(n, 'notice'))
+      for (const ev of events) hist.push(normalize(ev, 'event'))
+      const live = this.feed.filter((x) => x.kind === 'state' || x.kind === 'system')
+      const merged = [...live, ...hist.filter(Boolean)]
+      const seen = new Set()
+      this.feed = merged.filter((x) => {
+        if (!x || seen.has(x.id)) return false
+        seen.add(x.id)
+        return true
+      }).sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, MAX_FEED)
     },
 
     markAllRead() {
@@ -47,13 +75,14 @@ export const useNoticeStore = defineStore('notice', {
     clear() {
       this.feed = []
       this.unread = 0
+      this.loadedSimId = ''
     },
   },
 })
 
 function normalize(data, type) {
   const ts = Date.now()
-  const id = `f${++seq}`
+  const id = data?.id || `f${++seq}`
 
   if (typeof data === 'string') {
     return { id, kind: 'system', level: 'INFO', title: '系统消息', content: data, ts, read: false, raw: data }

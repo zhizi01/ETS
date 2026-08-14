@@ -16,10 +16,13 @@ export const pubApi = {
   sims: () => http.get('/pub/sims'),
   sim: (simId) => http.get(`/pub/sims/${simId}`),
 
-  /** 场次列表。后端只有公共版本，/api/user/sessions 并未实现 */
   sessions: (simId) => http.get('/pub/sessions', { params: { simId } }),
 
   rank: (simId, limit = 50) => http.get('/pub/rank', { params: { simId, limit } }),
+
+  notices: (simId, limit = 20) => http.get('/pub/notices', { params: { simId, limit } }),
+  events: (simId, limit = 20) => http.get('/pub/events', { params: { simId, limit } }),
+  activeEvents: (simId) => http.get('/pub/events/active', { params: { simId } }),
 
   quotes: (simId) => http.get('/pub/market/quotes', { params: { simId } }),
   quote: (simId, instrumentKey) => http.get('/pub/market/quote', { params: { simId, instrumentKey } }),

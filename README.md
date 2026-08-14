@@ -99,7 +99,7 @@ ets:
   market:
     quote-push-interval-ms: 1000 # 行情推送节流
   mysql:
-    enabled: false               # MySQL 归档开关
+    enabled: false               # MySQL 归档开关（默认关闭；开启后异步写入成交/合同/结算单）
 ```
 
 ### 启用 MySQL 归档

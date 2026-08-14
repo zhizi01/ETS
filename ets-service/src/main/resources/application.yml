@@ -64,7 +64,7 @@ ets:
     # 全局最小 tick，防止误配置刷爆
     min-tick-interval-ms: 500
   mysql:
-    enabled: true
+    enabled: false
     url: jdbc:mysql://127.0.0.1:3306/ets?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
     username: ets
     password: Tpfpxakt33dcwZ6e

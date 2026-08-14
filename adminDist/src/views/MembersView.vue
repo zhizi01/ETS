@@ -6,7 +6,7 @@ import PanelCard from '../components/PanelCard.vue'
 import { memberApi } from '../api'
 import { useSimStore } from '../stores/sim'
 import { dangerConfirm } from '../composables/useDanger'
-import { MEMBER_TYPE, MEMBER_TYPE_COLOR, ORDER_SOURCE, SOURCE_COLOR } from '../utils/enums'
+import { MEMBER_TYPE, MEMBER_TYPE_COLOR, ORDER_SOURCE, PERIOD_TYPE, SOURCE_COLOR, VARIETY } from '../utils/enums'
 import { datetime, money, mwh, num, pct, pnlClass, price, thousands, unThousands } from '../utils/format'
 
 const simStore = useSimStore()
@@ -124,6 +124,7 @@ async function loadAccounts() {
       simId: sid,
       memberType: acctState.memberType || undefined,
       source: acctState.source || undefined,
+      keyword: acctState.keyword || undefined,
       page: acctState.page,
       size: acctState.size,
     })
@@ -137,12 +138,7 @@ async function loadAccounts() {
   }
 }
 
-/** 关键字只作用于当前页，避免为了搜索把整盘账户全量拉下来 */
-const accountRows = computed(() => {
-  if (!acctState.keyword) return acctState.list
-  const k = acctState.keyword.toLowerCase()
-  return acctState.list.filter((a) => `${a.code} ${a.name} ${a.userName || ''}`.toLowerCase().includes(k))
-})
+const accountRows = computed(() => acctState.list)
 
 function reloadAccounts() {
   acctState.page = 1
@@ -207,11 +203,29 @@ const acctColumns = [
 ]
 
 // 账户详情抽屉
-const detail = reactive({ open: false, record: null })
+const detail = reactive({ open: false, record: null, positions: [], posLoading: false })
 
-function openDetail(a) {
+function instrumentLabel(key) {
+  if (!key) return '—'
+  const split = key.lastIndexOf('_')
+  if (split <= 0) return key
+  const v = VARIETY.find((x) => x.value === key.slice(0, split))?.label || key.slice(0, split)
+  const p = PERIOD_TYPE.find((x) => x.value === key.slice(split + 1))?.label || key.slice(split + 1)
+  return `${v}${p}`
+}
+
+async function openDetail(a) {
   detail.record = a
+  detail.positions = []
   detail.open = true
+  detail.posLoading = true
+  try {
+    detail.positions = (await memberApi.positions(a.id)) || []
+  } catch {
+    detail.positions = []
+  } finally {
+    detail.posLoading = false
+  }
 }
 
 onMounted(async () => {
@@ -274,8 +288,10 @@ watch(simId, (v) => {
             style="width: 180px"
             placeholder="搜索账户编号 / 名称"
             allow-clear
+            @press-enter="reloadAccounts"
           />
-          <span class="text-muted" style="font-size: 11.5px">本页内匹配，共 {{ acctState.total }} 户</span>
+          <a-button size="small" @click="reloadAccounts">搜索</a-button>
+          <span class="text-muted" style="font-size: 11.5px">服务端搜索，共 {{ acctState.total }} 户</span>
         </div>
       </PanelCard>
 
@@ -589,6 +605,31 @@ watch(simId, (v) => {
           <a-descriptions-item label="单笔申报上限">{{ mwh(detail.record.params?.maxSingleOrderMwh) }}</a-descriptions-item>
           <a-descriptions-item label="最大持仓">{{ mwh(detail.record.params?.maxPositionMwh) }}</a-descriptions-item>
         </a-descriptions>
+
+        <a-divider orientation="left" style="margin: 16px 0 12px"><span class="dt">逐标的持仓</span></a-divider>
+        <a-spin :spinning="detail.posLoading">
+          <a-empty v-if="!detail.positions.length" description="暂无持仓" />
+          <a-table
+            v-else
+            size="small"
+            row-key="instrumentKey"
+            :pagination="false"
+            :data-source="detail.positions"
+            :columns="[
+              { title: '标的', dataIndex: 'instrumentKey' },
+              { title: '净持仓', dataIndex: 'netQty', align: 'right' },
+              { title: '浮动盈亏', dataIndex: 'unrealizedPnl', align: 'right' },
+            ]"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.dataIndex === 'instrumentKey'">{{ instrumentLabel(record.instrumentKey) }}</template>
+              <template v-else-if="column.dataIndex === 'netQty'">{{ mwh(record.netQty) }}</template>
+              <template v-else-if="column.dataIndex === 'unrealizedPnl'">
+                <span :class="pnlClass(record.unrealizedPnl)">{{ num(record.unrealizedPnl, 2) }}</span>
+              </template>
+            </template>
+          </a-table>
+        </a-spin>
       </template>
     </a-drawer>
   </div>

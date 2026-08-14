@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { TOKEN_KEY } from '../api/request'
+import { useAuthStore } from '../stores/auth'
 
 const routes = [
   {
@@ -71,13 +72,24 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const logged = !!localStorage.getItem(TOKEN_KEY)
   if (!to.meta?.public && !logged) {
     return { path: '/login', query: to.fullPath === '/' ? undefined : { redirect: to.fullPath } }
   }
   if (to.path === '/login' && logged) {
     return { path: '/dashboard' }
+  }
+  if (logged && !to.meta?.public) {
+    const auth = useAuthStore()
+    if (!auth.validated) {
+      try {
+        await auth.fetchMe()
+      } catch {
+        auth.clearLocal()
+        return { path: '/login', query: { redirect: to.fullPath } }
+      }
+    }
   }
   return true
 })

@@ -95,6 +95,10 @@ useMarketSocket({
 })
 
 function openCreate() {
+  if (!simStore.tradable) {
+    message.warning(`模拟盘当前为「${simStore.sim?.stateLabel || simStore.simState}」，暂不接受挂牌`)
+    return
+  }
   if (!accountId.value) {
     message.warning('请先选择交易账户')
     return
@@ -143,6 +147,10 @@ async function submitCreate() {
 }
 
 function openTake(row) {
+  if (!simStore.tradable) {
+    message.warning(`模拟盘当前为「${simStore.sim?.stateLabel || simStore.simState}」，暂不接受摘牌`)
+    return
+  }
   if (!accountId.value) {
     message.warning('请先选择交易账户')
     return
@@ -220,7 +228,7 @@ function progress(row) {
         <a-button size="small" :loading="loading" @click="load">
           <template #icon><RefreshCw :size="12" /></template>
         </a-button>
-        <a-button type="primary" size="small" @click="openCreate">
+        <a-button type="primary" size="small" :disabled="!simStore.tradable" @click="openCreate">
           <template #icon><Plus :size="12" /></template>我要挂牌
         </a-button>
       </template>
@@ -340,6 +348,7 @@ function progress(row) {
                 v-else-if="['LISTED', 'PARTIAL_TAKEN'].includes(record.status)"
                 type="link"
                 size="small"
+                :disabled="!simStore.tradable"
                 @click="openTake(record)"
               >
                 摘牌

@@ -119,15 +119,30 @@ public class AdminMemberController {
     public R<PageResult<AccountVO>> accounts(@RequestParam String simId,
                                              @RequestParam(required = false) MemberType memberType,
                                              @RequestParam(required = false) OrderSource source,
+                                             @RequestParam(required = false) String keyword,
                                              @RequestParam(defaultValue = "1") int page,
                                              @RequestParam(defaultValue = "20") int size) {
+        String kw = keyword == null ? "" : keyword.trim().toLowerCase();
         List<TradingAccount> matched = new ArrayList<>();
         for (TradingAccount a : accountService.listBySim(simId, memberType)) {
-            if (source == null || source == a.getSource()) {
-                matched.add(a);
+            if (source != null && source != a.getSource()) {
+                continue;
             }
+            if (!kw.isEmpty() && !accountMatches(a, kw)) {
+                continue;
+            }
+            matched.add(a);
         }
         return R.ok(PageResult.slice(accountService.toVOList(matched), page, size));
+    }
+
+    private static boolean accountMatches(TradingAccount a, String kw) {
+        return contains(a.getCode(), kw) || contains(a.getName(), kw)
+                || contains(a.getUserId(), kw) || contains(a.getId(), kw);
+    }
+
+    private static boolean contains(String s, String kw) {
+        return s != null && s.toLowerCase().contains(kw);
     }
 
     @PostMapping("/accounts/{id}/adjust-fund")

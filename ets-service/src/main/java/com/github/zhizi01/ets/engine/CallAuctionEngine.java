@@ -30,7 +30,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 
 /**
  * 集中竞价统一出清。
@@ -80,7 +79,8 @@ public class CallAuctionEngine {
             sells = openOrders(book, Side.SELL);
         }
 
-        double clearPrice = findClearPrice(buys, sells, sess);
+        double clearPrice = ClearPriceCalculator.find(
+                buys, sells, sess.getTickSize(), sess.getPriceFloor(), sess.getPriceCap());
         List<Order> eligibleBuys = eligible(buys, Side.BUY, clearPrice);
         List<Order> eligibleSells = eligible(sells, Side.SELL, clearPrice);
         double qb = sum(eligibleBuys);
@@ -138,57 +138,6 @@ public class CallAuctionEngine {
         latest.setClearPrice(Nums.price(clearPrice));
         latest.setUpdatedAt(System.currentTimeMillis());
         simPort.saveSession(latest);
-    }
-
-    // ── 出清价 ──────────────────────────────────────────────
-
-    /**
-     * 遍历候选价寻找最大成交量。同一最大成交量对应的候选价可能有多个，
-     * 取其首尾的中点作为出清价，符合「区间取中点」的规则。
-     */
-    private double findClearPrice(List<Order> buys, List<Order> sells, TradingSession sess) {
-        if (buys.isEmpty() || sells.isEmpty()) {
-            return 0d;
-        }
-        TreeSet<Double> candidates = new TreeSet<>();
-        for (Order o : buys) {
-            candidates.add(o.getPrice());
-        }
-        for (Order o : sells) {
-            candidates.add(o.getPrice());
-        }
-
-        double best = 0, lo = 0, hi = 0;
-        for (Double p : candidates) {
-            double demand = 0;
-            for (Order b : buys) {
-                if (Nums.gte(b.getPrice(), p)) {
-                    demand += b.remainQty();
-                }
-            }
-            double supply = 0;
-            for (Order s : sells) {
-                if (Nums.gte(p, s.getPrice())) {
-                    supply += s.remainQty();
-                }
-            }
-            double vol = Math.min(demand, supply);
-            if (!Nums.isPositive(vol)) {
-                continue;
-            }
-            if (Nums.gt(vol, best)) {
-                best = vol;
-                lo = p;
-                hi = p;
-            } else if (Nums.eq(vol, best)) {
-                hi = p;
-            }
-        }
-        if (!Nums.isPositive(best)) {
-            return 0d;
-        }
-        double mid = Nums.alignTick((lo + hi) / 2, sess.getTickSize());
-        return Nums.price(Nums.clamp(mid, sess.getPriceFloor(), sess.getPriceCap()));
     }
 
     // ── 分配与配对 ──────────────────────────────────────────

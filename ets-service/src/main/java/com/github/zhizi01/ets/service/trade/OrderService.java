@@ -72,9 +72,10 @@ public class OrderService {
         TradingSession sess = simPort.requireSession(cmd.getSessionId());
         Sim sim = simPort.requireSim(sess.getSimId());
         TradingAccount acct = accountPort.require(cmd.getAccountId());
-        if (!sess.getTradeMode().usesOrderBook()) {
+        if (sess.getTradeMode() == null || !sess.getTradeMode().usesOrderBook()) {
+            String mode = sess.getTradeMode() == null ? "未配置" : sess.getTradeMode().getLabel();
             throw BizException.of(ErrorCode.SESSION_STATE_ILLEGAL,
-                    "「" + sess.getTradeMode().getLabel() + "」场次不接受订单簿申报，请使用对应的交易入口");
+                    "「" + mode + "」场次不接受订单簿申报，请使用对应的交易入口");
         }
 
         Order o = build(cmd, sess, acct);

@@ -7,6 +7,8 @@ export const pubApi = {
   health: () => http.get('/pub/health'),
   enums: () => http.get('/pub/meta/enums'),
   adminLogin: (username, password) => http.post('/pub/auth/admin/login', { username, password }),
+  adminMe: () => http.get('/admin/auth/me'),
+  adminLogout: () => http.post('/admin/auth/logout'),
   sims: () => http.get('/pub/sims'),
   sim: (simId) => http.get(`/pub/sims/${simId}`),
   sessions: (simId) => http.get('/pub/sessions', { params: { simId } }),
@@ -73,6 +75,7 @@ export const memberApi = {
   resetPassword: (id, newPassword) =>
     http.post(`/admin/users/${id}/reset-password`, newPassword ? { newPassword } : {}),
   accounts: (params) => http.get('/admin/accounts', { params }),
+  positions: (id) => http.get(`/admin/accounts/${id}/positions`),
   adjustFund: (id, amount, remark) => http.post(`/admin/accounts/${id}/adjust-fund`, { amount, remark }),
   forceCancel: (id) => http.post(`/admin/accounts/${id}/force-cancel`),
 }
@@ -94,6 +97,7 @@ export const settleApi = {
   run: (simId, period) => http.post('/admin/settle/run', { simId, period }),
   bills: (simId, period, page = 1, size = 20) =>
     http.get('/admin/settle/bills', { params: { simId, period, page, size } }),
+  rank: (simId, limit = 100) => http.get('/admin/rank', { params: { simId, limit } }),
 }
 
 export const sysApi = {

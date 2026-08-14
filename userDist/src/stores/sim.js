@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { pubApi } from '@/api/pub'
+import { sessionApi } from '@/api/user'
 
 const SIM_KEY = 'ets.user.simId'
 
@@ -86,7 +87,11 @@ export const useSimStore = defineStore('sim', {
       if (!simId) return []
       this.sessionsLoading = true
       try {
-        this.sessions = (await pubApi.sessions(simId)) || []
+        try {
+          this.sessions = (await sessionApi.list({ simId })) || []
+        } catch {
+          this.sessions = (await pubApi.sessions(simId)) || []
+        }
       } finally {
         this.sessionsLoading = false
       }

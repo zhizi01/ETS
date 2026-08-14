@@ -108,7 +108,7 @@ public class TradeServiceImpl implements TradePort {
         int orders = 0;
         int listings = 0;
         int negos = 0;
-        if (sess.getTradeMode().usesOrderBook()) {
+        if (sess.getTradeMode() != null && sess.getTradeMode().usesOrderBook()) {
             orders = orderService.expireSessionOrders(sessionId);
         }
         try {

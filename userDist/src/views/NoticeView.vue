@@ -59,7 +59,7 @@ onMounted(() => noticeStore.markAllRead())
           <a-radio-button value="system">系统 {{ counts.system }}</a-radio-button>
         </a-radio-group>
         <span class="tip">
-          消息经 WebSocket 主题 <b class="mono">sim.{{ simStore.currentSimId }}</b> 实时推送，仅保留本次会话期间收到的内容
+          进入页面时拉取历史公告与事件，盘中经 WebSocket 主题 <b class="mono">sim.{{ simStore.currentSimId }}</b> 实时追加
         </span>
       </div>
 

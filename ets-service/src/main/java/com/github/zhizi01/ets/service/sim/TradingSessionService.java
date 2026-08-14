@@ -338,6 +338,18 @@ public class TradingSessionService {
         }
     }
 
+    /** 结算完成后把已闭市场次推进到 SETTLED，对齐 DESIGN 状态机。 */
+    public int markClosedAsSettled(String simId) {
+        int n = 0;
+        for (TradingSession s : listBySim(simId)) {
+            if (s.getState() == TSessionState.CLOSED) {
+                transit(s, TSessionState.SETTLED, "settle");
+                n++;
+            }
+        }
+        return n;
+    }
+
     public TradingSession close(String sessionId) {
         TradingSession s = require(sessionId);
         if (s.getState() == TSessionState.CLOSED || s.getState() == TSessionState.SETTLED) {

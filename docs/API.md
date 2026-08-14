@@ -16,7 +16,7 @@ Base URL：`http://localhost:8080`　认证头：`X-Token: <token>`
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/pub/health` | 健康检查，返回 `{redis:true, ts}` |
+| GET | `/api/pub/health` | 健康检查，返回 `{redis, latencyMs, ts}` |
 | GET | `/api/pub/meta/enums` | 全部枚举字典 `{MemberType:[{value,label}], ...}` |
 | POST | `/api/pub/auth/register` | 用户注册 `{username,password,nickname,orgName,phone}` |
 | POST | `/api/pub/auth/login` | 用户登录 `{username,password}` → `{token,user}` |
@@ -41,9 +41,9 @@ Base URL：`http://localhost:8080`　认证头：`X-Token: <token>`
 ### 2.1 账号
 | 方法 | 路径 | 请求体 / 参数 |
 |---|---|---|
-| GET | `/api/user/auth/me` | — |
-| POST | `/api/user/auth/logout` | — |
-| POST | `/api/user/auth/password` | `{oldPassword,newPassword}` |
+| GET | `/api/user/auth/me` | 校验令牌并返回当前用户 |
+| POST | `/api/user/auth/logout` | 服务端立即吊销当前令牌 |
+| POST | `/api/user/auth/password` | `{oldPassword,newPassword}`，改密后全部会话失效 |
 
 ### 2.2 交易账户（`SETUP` 阶段可增删改，`RUNNING` 后锁定）
 | 方法 | 路径 | 说明 |
@@ -126,11 +126,18 @@ Base URL：`http://localhost:8080`　认证头：`X-Token: <token>`
 | GET | `/api/user/contracts?accountId=&status=&page=&size=` |
 | GET | `/api/user/bills?accountId=&period=&page=&size=` |
 | GET | `/api/user/portfolio?accountId=` 组合分析：品种分布、买卖均价对比、盈亏曲线 |
-| GET | `/api/user/notices?simId=&limit=20` 公告与市场事件 |
+| GET | `/api/user/notices?simId=&limit=20` 公告历史 |
+| GET | `/api/user/notices/feed?simId=&limit=20` 公告 + 市场事件一次返回 |
 
 ---
 
 ## 三、管理端 `/api/admin`（角色 ADMIN）
+
+### 3.0 认证
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/admin/auth/me` | 校验令牌并返回当前管理员 |
+| POST | `/api/admin/auth/logout` | 服务端立即吊销当前令牌 |
 
 ### 3.1 模拟盘
 | 方法 | 路径 | 说明 |
@@ -142,7 +149,7 @@ Base URL：`http://localhost:8080`　认证头：`X-Token: <token>`
 | POST | `/api/admin/sims/{id}/pause` | 暂停（拒绝新申报，机器人停摆） |
 | POST | `/api/admin/sims/{id}/resume` | |
 | POST | `/api/admin/sims/{id}/end` | 结束并触发终盘结算 |
-| POST | `/api/admin/sims/{id}/reset` | 清空该盘所有交易数据，回到 SETUP |
+| POST | `/api/admin/sims/{id}/reset` | 清空该盘交易数据、账户与机器人，回到 SETUP |
 | GET | `/api/admin/sims/{id}/dashboard` | 监控大屏：在线数、成交额、活跃标的、价格走势、异常告警 |
 
 ### 3.2 交易场次
@@ -165,6 +172,7 @@ Base URL：`http://localhost:8080`　认证头：`X-Token: <token>`
 | GET | `/api/admin/robots/strategies` | 策略元数据与默认参数 |
 | POST | `/api/admin/robots` | 单个创建（同时自动建交易账户） |
 | POST | `/api/admin/robots/batch` | `{simId,count,strategyMix:{MARKET_MAKER:3,...},memberTypeMix:{...},capitalMin,capitalMax}` |
+| POST | `/api/admin/robots/spawn-default` | `?simId=` 补齐默认机器人阵容（已有则不重复） |
 | PUT/DELETE | `/api/admin/robots/{id}` | |
 | POST | `/api/admin/robots/{id}/enable` \| `/disable` | |
 | POST | `/api/admin/robots/enable-all` \| `/disable-all` | `{simId}` |
@@ -175,7 +183,7 @@ Base URL：`http://localhost:8080`　认证头：`X-Token: <token>`
 | GET | `/api/admin/users?keyword=&page=&size=` |
 | POST | `/api/admin/users/{id}/freeze` \| `/unfreeze` |
 | POST | `/api/admin/users/{id}/reset-password` |
-| GET | `/api/admin/accounts?simId=&memberType=&source=&page=&size=` |
+| GET | `/api/admin/accounts?simId=&memberType=&source=&keyword=&page=&size=` |
 | GET | `/api/admin/accounts/{id}/positions` 任意账户的逐标的持仓（用户端同名接口只能查自己的） |
 | POST | `/api/admin/accounts/{id}/adjust-fund` `{amount,remark}` |
 | POST | `/api/admin/accounts/{id}/force-cancel` 撤销该账户全部挂单 |
@@ -184,10 +192,12 @@ Base URL：`http://localhost:8080`　认证头：`X-Token: <token>`
 | 方法 | 路径 |
 |---|---|
 | GET | `/api/admin/events?simId=&page=&size=` |
+| GET | `/api/admin/events/active?simId=` | 当前生效中的事件 |
 | POST | `/api/admin/events` `{simId,type,magnitude,durationMinutes,title,description}` |
 | DELETE | `/api/admin/events/{id}` |
 | GET | `/api/admin/fundamental?simId=` |
 | PUT | `/api/admin/fundamental?simId=` `{coalPriceIdx,gasPriceIdx,loadFactor,windFactor,solarFactor,benchmarkPrice}` |
+| GET | `/api/admin/notices?simId=&limit=30` |
 | POST | `/api/admin/notices` `{simId,title,content,level}` |
 
 ### 3.6 结算与系统

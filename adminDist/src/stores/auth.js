@@ -16,6 +16,7 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem(TOKEN_KEY) || '',
     admin: readProfile(),
+    validated: false,
   }),
 
   getters: {
@@ -28,16 +29,35 @@ export const useAuthStore = defineStore('auth', {
       const data = await pubApi.adminLogin(username, password)
       this.token = data.token
       this.admin = data.admin || null
+      this.validated = true
       localStorage.setItem(TOKEN_KEY, this.token)
       localStorage.setItem(PROFILE_KEY, JSON.stringify(this.admin))
       return data
     },
 
-    logout() {
+    async fetchMe() {
+      const admin = await pubApi.adminMe()
+      this.admin = admin
+      this.validated = true
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(admin))
+      return admin
+    },
+
+    clearLocal() {
       this.token = ''
       this.admin = null
+      this.validated = false
       localStorage.removeItem(TOKEN_KEY)
       localStorage.removeItem(PROFILE_KEY)
+    },
+
+    async logout() {
+      try {
+        await pubApi.adminLogout()
+      } catch {
+        // 令牌可能已失效，本地照样清干净
+      }
+      this.clearLocal()
     },
   },
 })

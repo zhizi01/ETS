@@ -29,7 +29,11 @@ async function bootstrap(simId) {
     router.replace('/lobby')
     return
   }
-  await Promise.allSettled([simStore.loadSessions(simId), acctStore.load(simId)])
+  await Promise.allSettled([
+    simStore.loadSessions(simId),
+    acctStore.load(simId),
+    noticeStore.loadHistory(simId),
+  ])
   acctStore.refreshCurrent()
 }
 
@@ -71,6 +75,9 @@ usePolling(() => acctStore.refreshCurrent(), 6000, { immediate: false })
 <template>
   <div class="app-shell">
     <TopBar />
+    <div v-if="simStore.sim && !simStore.tradable && !simStore.isSetup" class="halt-bar">
+      模拟盘当前为「{{ simStore.sim.stateLabel || simStore.simState }}」，暂停接受新申报
+    </div>
     <div class="app-body">
       <SideNav :sim-id="simId" />
       <main class="app-main">
@@ -88,6 +95,14 @@ usePolling(() => acctStore.refreshCurrent(), 6000, { immediate: false })
   flex-direction: column;
   height: 100%;
   background: var(--ets-bg);
+}
+.halt-bar {
+  flex: none;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: #f5a524;
+  background: rgba(245, 165, 36, 0.08);
+  border-bottom: 1px solid rgba(245, 165, 36, 0.25);
 }
 .app-body {
   flex: 1;

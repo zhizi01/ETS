@@ -44,6 +44,10 @@ http.interceptors.response.use(
       toLogin()
       return Promise.reject(new Error(body.msg || '未登录'))
     }
+    if (body.code === 403) {
+      message.error(body.msg || '无权执行该操作')
+      return Promise.reject(Object.assign(new Error(body.msg || '无权访问'), { code: 403 }))
+    }
 
     message.error(body.msg || `请求失败（${body.code}）`)
     return Promise.reject(Object.assign(new Error(body.msg || '请求失败'), { code: body.code }))

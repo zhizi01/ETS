@@ -19,6 +19,7 @@ export const useAuthStore = defineStore('auth', {
     token: getToken(),
     user: readCachedUser(),
     checking: false,
+    validated: false,
   }),
 
   getters: {
@@ -52,6 +53,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const u = await authApi.me()
         this.user = u
+        this.validated = true
         localStorage.setItem(USER_KEY, JSON.stringify(u))
         return u
       } finally {
@@ -68,9 +70,15 @@ export const useAuthStore = defineStore('auth', {
       this.reset()
     },
 
+    async changePassword(form) {
+      await authApi.changePassword(form)
+      this.reset()
+    },
+
     reset() {
       this.token = ''
       this.user = null
+      this.validated = false
       clearToken()
       localStorage.removeItem(USER_KEY)
       disconnect()

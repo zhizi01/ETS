@@ -51,7 +51,7 @@ const fillCfg = reactive({ basePrice: 380, totalMwh: 24000, shape: 'CONTINUOUS' 
 const accountId = computed(() => acctStore.currentId)
 const spotSessions = computed(() => simStore.sessionsOfMode('SPOT_CLEARING'))
 const session = computed(() => simStore.sessionOf(sessionId.value))
-const editable = computed(() => ['PENDING', 'PRE_OPEN', 'OPEN'].includes(session.value?.state))
+const editable = computed(() => simStore.tradable && ['PENDING', 'PRE_OPEN', 'OPEN'].includes(session.value?.state))
 const cleared = computed(() => clearing.value.some((c) => Number(c.price) > 0 || Number(c.volume) > 0))
 
 const totalQty = computed(() => segments.value.reduce((s, x) => s + (Number(x.quantity) || 0), 0))
@@ -403,7 +403,9 @@ function myClearedOf(h) {
       </div>
 
       <div v-if="session && !editable" class="warn-bar">
-        场次当前为「{{ session.stateLabel }}」，已停止接受申报，以下为只读视图。
+        {{ !simStore.tradable
+          ? `模拟盘当前为「${simStore.sim?.stateLabel || simStore.simState}」，暂不接受现货申报`
+          : `场次当前为「${session.stateLabel}」，已停止接受申报，以下为只读视图。` }}
       </div>
     </PanelBox>
 

@@ -57,6 +57,10 @@ http.interceptors.response.use(
       onUnauthorized?.()
       return Promise.reject(Object.assign(new Error(body.msg || 'unauthorized'), { code: 401, body }))
     }
+    if (body.code === 403) {
+      if (!resp.config?.silent) toast(body.msg || '无权执行该操作')
+      return Promise.reject(Object.assign(new Error(body.msg || 'forbidden'), { code: 403, body }))
+    }
 
     if (!resp.config?.silent) toast(body.msg || `请求失败（${body.code}）`)
     return Promise.reject(Object.assign(new Error(body.msg || 'biz error'), { code: body.code, body }))

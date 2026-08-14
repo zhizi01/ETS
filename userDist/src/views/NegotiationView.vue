@@ -137,7 +137,9 @@ async function act(kind) {
       detail.value = await negoApi.accept(detail.value.id, body)
       message.success('已接受报价，购售电合同已生成')
     } else if (kind === 'reject') {
-      detail.value = await negoApi.reject(detail.value.id, { ...body, message: '暂不接受该报价' })
+      const reason = window.prompt('拒绝理由（可留空）', '暂不接受该报价')
+      if (reason === null) return
+      detail.value = await negoApi.reject(detail.value.id, { ...body, message: reason || '暂不接受该报价' })
       message.success('已拒绝本次协商')
     } else if (kind === 'withdraw') {
       detail.value = await negoApi.withdraw(detail.value.id, body)
@@ -181,6 +183,10 @@ async function submitCounter() {
 }
 
 async function openPropose() {
+  if (!simStore.tradable) {
+    message.warning(`模拟盘当前为「${simStore.sim?.stateLabel || simStore.simState}」，暂不接受协商`)
+    return
+  }
   if (!accountId.value) {
     message.warning('请先选择交易账户')
     return
@@ -241,7 +247,7 @@ const counterpartyOptions = computed(() =>
     <PanelBox class="col-list" title="协商会话" :sub="`${list.length} 条`">
       <template #extra>
         <a-button size="small" :loading="listLoading" @click="loadList"><RefreshCw :size="12" /></a-button>
-        <a-button type="primary" size="small" @click="openPropose">
+        <a-button type="primary" size="small" :disabled="!simStore.tradable" @click="openPropose">
           <template #icon><MessageSquarePlus :size="12" /></template>发起
         </a-button>
       </template>

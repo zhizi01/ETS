@@ -5,7 +5,7 @@ import { Calculator, RefreshCw, Trophy } from 'lucide-vue-next'
 import EChart from '../components/EChart.vue'
 import PanelCard from '../components/PanelCard.vue'
 import KpiCard from '../components/KpiCard.vue'
-import { pubApi, settleApi } from '../api'
+import { settleApi } from '../api'
 import { useSimStore } from '../stores/sim'
 import { dangerConfirm } from '../composables/useDanger'
 import { MEMBER_TYPE_COLOR, SERIES_COLORS, SOURCE_COLOR } from '../utils/enums'
@@ -86,7 +86,7 @@ async function loadRank() {
   }
   rank.loading = true
   try {
-    rank.list = (await pubApi.rank(simId.value, 50)) || []
+    rank.list = (await settleApi.rank(simId.value, 50)) || []
   } catch {
     rank.list = []
   } finally {

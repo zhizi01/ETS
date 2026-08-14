@@ -82,9 +82,9 @@ function go(key) {
   if (route.name !== key) router.push({ name: key })
 }
 
-function logout() {
+async function logout() {
   socket.close()
-  auth.logout()
+  await auth.logout()
   router.replace('/login')
 }
 

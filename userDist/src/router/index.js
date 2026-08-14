@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getToken, setUnauthorizedHandler } from '@/api/http'
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
   { path: '/', redirect: '/lobby' },
@@ -80,12 +81,23 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const logged = !!getToken()
   if (!to.meta?.public && !logged) {
     return { name: 'login', query: to.fullPath === '/' ? undefined : { redirect: to.fullPath } }
   }
   if (to.name === 'login' && logged) return { name: 'lobby' }
+  if (logged && !to.meta?.public) {
+    const auth = useAuthStore()
+    if (!auth.validated) {
+      try {
+        await auth.fetchMe()
+      } catch {
+        auth.reset()
+        return { name: 'login', query: { redirect: to.fullPath } }
+      }
+    }
+  }
   return true
 })
 

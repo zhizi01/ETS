@@ -403,6 +403,47 @@ CREATE TABLE IF NOT EXISTS ets_notice (
   KEY idx_notice_sim (sim_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='市场公告';
 
+CREATE TABLE IF NOT EXISTS ets_quote (
+  sim_id          VARCHAR(32)  NOT NULL,
+  instrument_key  VARCHAR(32)  NOT NULL,
+  last_price      DOUBLE       NOT NULL DEFAULT 0,
+  open_price      DOUBLE       NOT NULL DEFAULT 0,
+  high_price      DOUBLE       NOT NULL DEFAULT 0,
+  low_price       DOUBLE       NOT NULL DEFAULT 0,
+  prev_close      DOUBLE       NOT NULL DEFAULT 0,
+  volume          DOUBLE       NOT NULL DEFAULT 0,
+  amount          DOUBLE       NOT NULL DEFAULT 0,
+  updated_at      BIGINT       NOT NULL DEFAULT 0,
+  PRIMARY KEY (sim_id, instrument_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='行情快照归档';
+
+CREATE TABLE IF NOT EXISTS ets_kline (
+  sim_id          VARCHAR(32)  NOT NULL,
+  instrument_key  VARCHAR(32)  NOT NULL,
+  interval_code   VARCHAR(8)   NOT NULL COMMENT '1m/5m/15m/1h/1d',
+  bar_ts          BIGINT       NOT NULL,
+  open_price      DOUBLE       NOT NULL DEFAULT 0,
+  high_price      DOUBLE       NOT NULL DEFAULT 0,
+  low_price       DOUBLE       NOT NULL DEFAULT 0,
+  close_price     DOUBLE       NOT NULL DEFAULT 0,
+  volume          DOUBLE       NOT NULL DEFAULT 0,
+  amount          DOUBLE       NOT NULL DEFAULT 0,
+  PRIMARY KEY (sim_id, instrument_key, interval_code, bar_ts)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='K线归档';
+
+CREATE TABLE IF NOT EXISTS ets_fundamental (
+  sim_id           VARCHAR(32) NOT NULL,
+  coal_price_idx   DOUBLE      NOT NULL DEFAULT 1,
+  gas_price_idx    DOUBLE      NOT NULL DEFAULT 1,
+  load_factor      DOUBLE      NOT NULL DEFAULT 1,
+  wind_factor      DOUBLE      NOT NULL DEFAULT 1,
+  solar_factor     DOUBLE      NOT NULL DEFAULT 1,
+  outage_ratio     DOUBLE      NOT NULL DEFAULT 0,
+  benchmark_price  DOUBLE      NOT NULL DEFAULT 380,
+  updated_at       BIGINT      NOT NULL DEFAULT 0,
+  PRIMARY KEY (sim_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='基本面快照归档';
+
 CREATE TABLE IF NOT EXISTS ets_audit_log (
   id         VARCHAR(32)  NOT NULL,
   sim_id     VARCHAR(32)           DEFAULT NULL,

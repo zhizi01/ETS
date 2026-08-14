@@ -1,6 +1,7 @@
 package com.github.zhizi01.ets.service.clearing;
 
 import com.github.zhizi01.ets.api.AccountPort;
+import com.github.zhizi01.ets.api.ArchivePort;
 import com.github.zhizi01.ets.api.AuditPort;
 import com.github.zhizi01.ets.api.FundPort;
 import com.github.zhizi01.ets.api.SimPort;
@@ -20,6 +21,7 @@ import com.github.zhizi01.ets.domain.model.TradingAccount;
 import com.github.zhizi01.ets.repo.BillRepo;
 import com.github.zhizi01.ets.repo.ContractRepo;
 import com.github.zhizi01.ets.repo.SimRepo;
+import com.github.zhizi01.ets.service.sim.TradingSessionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +71,12 @@ public class SettlementService {
     @Lazy
     @Autowired
     private AuditPort auditPort;
+    @Lazy
+    @Autowired
+    private ArchivePort archivePort;
+    @Lazy
+    @Autowired
+    private TradingSessionService sessionService;
 
     public List<Bill> settle(String simId, String period) {
         Sim sim = simPort.requireSim(simId);
@@ -80,12 +88,18 @@ public class SettlementService {
         }
 
         List<Bill> bills = new ArrayList<>(accounts.size());
+        List<String> failed = new ArrayList<>();
         for (TradingAccount acct : accounts) {
             try {
                 bills.add(billOf(sim, acct, p));
             } catch (Exception e) {
                 log.error("账户结算失败 acct={} period={}", acct.getId(), p, e);
+                failed.add((acct.getCode() == null ? acct.getId() : acct.getCode()) + "：" + e.getMessage());
             }
+        }
+        if (bills.isEmpty()) {
+            throw BizException.of(ErrorCode.SETTLE_FAILED,
+                    "全部账户结算失败" + (failed.isEmpty() ? "" : "：" + String.join("；", failed)));
         }
 
         // 排名按本期利润，与排行榜的 totalPnl 口径分开：账单看单期表现，排行榜看累计。
@@ -94,14 +108,21 @@ public class SettlementService {
         for (Bill b : bills) {
             b.setRank(rank++);
             billRepo.saveBill(b);
+            archivePort.offerBill(b);
         }
         for (TradingAccount acct : accounts) {
             simRepo.updateRank(simId, acct.getId(), acct.getStat() == null ? 0 : acct.getStat().getTotalPnl());
         }
+        int settledSessions = sessionService.markClosedAsSettled(simId);
 
         safePush("sim." + simId, "结算完成 " + p);
-        safeAudit(simId, "SETTLE", p, "结算完成，出具账单 " + bills.size() + " 份");
-        log.info("结算完成 sim={} period={} bills={}", simId, p, bills.size());
+        safeAudit(simId, "SETTLE", p, "结算完成，出具账单 " + bills.size() + " 份，场次结算 " + settledSessions);
+        log.info("结算完成 sim={} period={} bills={} failed={} settledSessions={}",
+                simId, p, bills.size(), failed.size(), settledSessions);
+        if (!failed.isEmpty()) {
+            throw BizException.of(ErrorCode.SETTLE_FAILED,
+                    "已出具 " + bills.size() + " 份账单，" + failed.size() + " 个账户失败：" + String.join("；", failed));
+        }
         return bills;
     }
 
